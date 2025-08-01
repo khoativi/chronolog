@@ -1,0 +1,51 @@
+name: Security Scan (Trivy & Gitleaks)
+
+on:
+  push:
+    branches:
+      - main # Chạy workflow khi có push lên branch 'main'
+
+jobs:
+  security_scan:
+    runs-on: ubuntu-latest # Sử dụng runner Ubuntu mới nhất
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # fetch-depth: 0 rất quan trọng cho Gitleaks để quét toàn bộ lịch sử Git
+          fetch-depth: 0
+
+      # --- Gitleaks Scan ---
+      - name: Run Gitleaks scan
+        # Sử dụng action chính thức của Gitleaks
+        uses: zricethezav/gitleaks-action@master
+        # Gitleaks sẽ tự động chạy với cấu hình mặc định hoặc .gitleaks.toml nếu có
+        # Nếu tìm thấy secret, bước này sẽ làm job thất bại
+
+      # --- Trivy Vulnerability Scan ---
+      - name: Run Trivy vulnerability scan
+        # Sử dụng action Trivy chính thức từ Aqua Security
+        uses: aquasecurity/trivy-action@master
+        with:
+          # Chỉ định loại scan: 'fs' (filesystem) để quét mã nguồn và dependencies
+          scan-type: 'fs'
+          # BỎ ĐI HOẶC THAY ĐỔI DÒNG SEVERITY ĐỂ BÁO CÁO TẤT CẢ
+          severity: 'LOW,MEDIUM,HIGH,CRITICAL' # Hoặc chỉ cần bỏ hoàn toàn dòng này
+          # Trivy sẽ báo cáo tất cả các mức độ nếu không có 'severity' được chỉ định
+          
+          # Định dạng output là bảng để dễ đọc trong log
+          format: 'table'
+          # Job sẽ thất bại nếu tìm thấy bất kỳ lỗ hổng nào (bất kể mức độ nghiêm trọng)
+          # nếu bạn muốn job chỉ thất bại với mức độ cao, hãy bổ sung lại severity
+          exit-code: '0' 
+          # Tùy chọn: output sang định dạng SARIF để đẩy lên GitHub Security tab
+          # output: 'trivy-results.sarif'
+          # security-checks: 'vuln,secret,config' # Bạn có thể thêm 'secret' và 'config' nếu muốn Trivy cũng kiểm tra các loại này
+
+      # --- Tùy chọn: Tải kết quả SARIF lên GitHub Security tab ---
+      # - name: Upload Trivy SARIF results
+      #   # Luôn chạy bước này để tải kết quả ngay cả khi Trivy tìm thấy lỗ hổng và job thất bại
+      #   if: always()
+      #   uses: github/codeql-action/upload-sarif@v3
+      #   with:
+      #     sarif_file: 'trivy-results.sarif'
