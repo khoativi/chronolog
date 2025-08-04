@@ -19,17 +19,11 @@ import { Separator } from '@/components/ui/separator';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { isValidUuidV7 } from '@/lib/validate-utils';
+import { StoredAttachment } from '@/types/event';
 
 type Props = {
   params: Promise<{ projectId: string; teamId: string }>;
 };
-
-interface StoredAttachment {
-  name: string;
-  url: string;
-  type: string;
-  filesize: string;
-}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const projectId = (await params).projectId;
@@ -94,7 +88,7 @@ export default async function Page({ params }: Readonly<Props>) {
     take: 1000
   });
 
-  const formattedExperiences = experiences.map((experience) => {
+  const formattedEvents = experiences.map((experience) => {
     const typedAttachments: StoredAttachment[] | null = Array.isArray(
       experience.attachments
     )
@@ -127,14 +121,14 @@ export default async function Page({ params }: Readonly<Props>) {
       <Separator className="my-6" />
       <div className="relative ml-3">
         <div className="absolute left-0 top-4 bottom-0 border-l-2" />
-        {formattedExperiences.map(
+        {formattedEvents.map(
           ({ description, title, attachments, eventDate, user }, index) => (
             <div key={index} className="relative pl-8 pb-12 last:pb-0">
               <div className="absolute h-3 w-3 -translate-x-1/2 left-px top-3 rounded-full border-2 border-primary bg-background" />
               <div className="space-y-3">
                 <div>
                   <h3 className="text-lg sm:text-xl font-medium">{title}</h3>
-                  <div className="flex items-center gap-2 mt-1 text-sm">
+                  <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
                       <Avatar className="h-7 w-7">
                         <AvatarImage
@@ -149,10 +143,9 @@ export default async function Page({ params }: Readonly<Props>) {
                     <span>{format(eventDate, 'dd/MM/yyyy')}</span>
                   </div>
                 </div>
-                <p
-                  className="text-sm sm:text-base text-muted-foreground"
-                  dangerouslySetInnerHTML={{ __html: description }}
-                />
+                <div className="prose dark:prose-invert max-w-none">
+                  <div dangerouslySetInnerHTML={{ __html: description }} />
+                </div>
                 {attachments && attachments?.length > 0 && (
                   <div className="mt-4 border-t pt-4">
                     <h6 className="text-sm font-semibold mb-2">Tệp đính kèm</h6>

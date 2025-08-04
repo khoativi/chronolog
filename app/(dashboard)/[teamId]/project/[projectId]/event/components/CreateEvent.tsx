@@ -1,5 +1,6 @@
 'use client';
 
+import { Content } from '@tiptap/react';
 import { format } from 'date-fns';
 import {
   ChevronDownIcon,
@@ -18,7 +19,7 @@ import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
 
 import { createEvent } from '@/actions/project';
-import { TextEditor } from '@/components/text-editor';
+import { MinimalTiptapEditor } from '@/components/minimal-tiptap';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Input } from '@/components/ui/input';
@@ -43,7 +44,7 @@ export interface AttachmentInput {
 export default function CreateEvent({ projectId, teamId }: Readonly<Props>) {
   const router = useRouter();
 
-  const [content, setContent] = useState<string>('');
+  const [content, setContent] = useState<Content>('');
   const [attachments, setAttachments] = useState<AttachmentInput[]>([]);
   const [isPending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
@@ -92,7 +93,7 @@ export default function CreateEvent({ projectId, teamId }: Readonly<Props>) {
     startTransition(async () => {
       const formData = new FormData(e.currentTarget);
       formData.set('projectId', projectId);
-      formData.set('description', content);
+      formData.set('description', content as string);
 
       if (date) {
         formData.set('eventDate', date.toISOString());
@@ -134,9 +135,16 @@ export default function CreateEvent({ projectId, teamId }: Readonly<Props>) {
         </div>
         <div className="space-y-2">
           <Label htmlFor="description">Mô tả sự kiện</Label>
-          <TextEditor
-            content={content}
-            handleChangeContent={(value) => setContent(value)}
+          <MinimalTiptapEditor
+            value={content}
+            onChange={setContent}
+            className="w-full"
+            editorContentClassName="p-5"
+            output="html"
+            // placeholder="Enter your description..."
+            autofocus={true}
+            editable={true}
+            editorClassName="focus:outline-hidden"
           />
         </div>
         <div className="space-y-2">
